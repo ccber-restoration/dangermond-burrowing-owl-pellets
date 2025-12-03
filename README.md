@@ -1,5 +1,6 @@
 # Overview
-Dangermond Burrowing Owl pellet contents study.
+Study examining contents of Burrowing Owl pellets collected by Wayne Chapman in 2025 from the Cojo Terrace of the Dangermond Preserve.
+
 
 ## Data
 - Primary project folder on Google Drive is "Dangermond Burrowing Owl pellets" (https://drive.google.com/drive/folders/1oJSs6QwkB_rXeIKF1hzoZXjtTTJex-vW)
