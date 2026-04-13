@@ -16,7 +16,11 @@ Study examining contents of Burrowing Owl pellets collected by Wayne Chapman in 
   -  Tracker- is used for tracking sample processing progress for the pellets selected to sample
   -  ID_counting- contains the vertebrate identifications and counts (minimum number of individuals)
   -  Invert_counting- contains the invertebrate identifications and counts
-  -  Scratchwork contains lists of values to use in data validation rules     
+  -  Scratchwork contains lists of values for use in data validation rules     
+
+## Prey biomass
+
+
 
 # Code
 -  surveygrid.R reads in the survey grid layer (geopackage) 
