@@ -19,7 +19,6 @@ Study examining contents of Burrowing Owl pellets collected by Wayne Chapman in 
   -  Scratchwork contains lists of values to use in data validation rules     
 
 # Code
-
 -  surveygrid.R reads in the survey grid layer (geopackage) 
   
 ## References
