@@ -17,6 +17,10 @@ Study examining contents of Burrowing Owl pellets collected by Wayne Chapman in 
   -  ID_counting- contains the vertebrate identifications and counts (minimum number of individuals)
   -  Invert_counting- contains the invertebrate identifications and counts
   -  Scratchwork contains lists of values to use in data validation rules     
+
+# Code
+
+-  surveygrid.R reads in the survey grid layer (geopackage) 
   
 ## References
 
