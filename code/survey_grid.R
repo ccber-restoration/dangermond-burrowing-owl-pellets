@@ -5,13 +5,14 @@ library(mapview)
 library(sf)
 library(leafem)
 
+#view layers 
 st_layers("data/Cojo_Survey_10x10_Grid.gpkg")
 
 #read in geopackage layer
-survey_grid<- st_read("data/Cojo_Survey_10x10_Grid.gpkg", layer = "Survey_10x10_Grid") 
+survey_grid<- st_read("data/Cojo_Survey_10x10_Grid.gpkg", layer = "Survey_10x10_Grid") %>% 
+  st_transform(crs = 4326)
 
-
-survey_simple <- st_cast(survey_grid, "POLYGON")
+mapview(survey_simple)
 
 #list of quadrats with at least 8 pellets
 quad_high_density <- c(41589, 1285, 3622, 677)
@@ -30,7 +31,6 @@ high_density_quads <- grid %>%
 grid_sf <- st_as_sf(x = grid, coords = c("X", "Y"), crs = 4326) 
 
 high_density_quads_sf <-  st_as_sf(x = high_density_quads, coords = c("X", "Y"), crs = 4326) 
-
 
 # map.types = "Esri.WorldImagery"
 mapview(grid_sf, map.types = "Esri.WorldImagery")
