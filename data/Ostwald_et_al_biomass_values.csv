@@ -1,0 +1,10 @@
+Taxon,n,total_biomass,individual_biomass_g,biomass notes
+"Forficula auricularia Linnaeus, 1758",728,55.3,0.08, Hodson et al. 2011
+Coleoptera,394,43.3,0.11,"for the unidentified Coleoptera, we assumed mass was equal to that of the most common beetle genus in our study (Calanthus sp. Bonelli, 1810);  Ball et al. 2015"
+"Armadillidium sp. Brandt, 1831",331,32.4,0.1,Lefebvre et al. 2019
+"Vespula pennsylvanica (de Saussure, 1857)",40,3,0.08,Kovac and Stabentheiner 2012
+"Reithrodontyomys megalotis Baird, 1857",24,208.7,8.7,Thompson 1985
+Unidentified Rodentia sp.,10,87,8.7,"we assumed mass was equal to that of the most common rodent sample in our study (Reithrodontomys megalotis Baird, 1857)"
+"Mus musculus Linnaeus, 1758",5,53,10.6,See Table 1 in Velarde et al. 2007
+"Thomomys bottae Eydoux & Gervais, 1836",1,103.8,103.8,Gettinger 1984
+Orthoptera,NA,NA,#VALUE!,
