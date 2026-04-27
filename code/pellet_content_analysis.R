@@ -34,13 +34,10 @@ count_sums <- pellet_contents %>%
 
 # Turn count_sums into a pivot table of the vertebrate/invertebrate prey counts
 proportions <- count_sums %>%
-  pivot_wider(id_cols = catalog_number, names_from = `vert-invert`, values_from = count_sum) 
-
+  pivot_wider(id_cols = catalog_number, names_from = `vert-invert`, values_from = count_sum) %>% 
 # Use mutate to create a total count column, then use that to calculate the proportion of vertebrate prey by number
-proportions <- proportions %>% 
   mutate(across(everything(), ~replace_na(.x, 0))) %>% # replacing any numerical NA values with 0
   mutate(total_prey = Vertebrate + Invertebrate) %>% # add column: sum of total # of vert and invert prey
-  mutate(vert_ratio = Vertebrate/Invertebrate) %>% # add column: ratio of vertebrate prey to invertebrate
   mutate(vert_proportion = Vertebrate/total_prey) %>% # this can later be multiplied by 100 to give a percentage
   mutate(invert_proportion = Invertebrate/total_prey)
 
