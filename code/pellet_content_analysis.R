@@ -39,10 +39,11 @@ proportions <- count_sums %>%
   mutate(across(everything(), ~replace_na(.x, 0))) %>% # replacing any numerical NA values with 0
   mutate(total_prey = Vertebrate + Invertebrate) %>% # add column: sum of total # of vert and invert prey
   mutate(vert_proportion = Vertebrate/total_prey) %>% # this can later be multiplied by 100 to give a percentage
-  mutate(invert_proportion = Invertebrate/total_prey)
+  mutate(invert_proportion = Invertebrate/total_prey) %>%
+  mutate(Site = "Dangermond")
 
 # Subset data ----
-# create vertebrate & invert subsets
+## create vertebrate & invert subsets ----
 pellet_contents_vert <- pellet_contents %>% 
   filter(`vert-invert` == "Vertebrate")
 
@@ -52,10 +53,33 @@ pellet_contents_invert <- pellet_contents %>%
 
 view(prey_taxa)
 
-# Figures ----
+## Create taxon-based dataframe for count of individuals ----
+prey_taxa_lumped <- pellet_contents %>%
+  select(prey_taxon, common_name, MNI) %>%
+  group_by(common_name) %>%
+  summarise(MNI_tot = sum(MNI)) %>%
+  arrange(desc(MNI_tot)) %>%
+  filter(MNI_tot != 0)
 
-## Verts ----
-# stacked bar chart for vert contents only
+# Figures ----
+## Taxa Individuals Chart ----
+# Create horizontally-aligned bar chart for the total count of individuals across taxa as referred to by their common names.
+fig_prey_taxa <- ggplot(prey_taxa_lumped, aes(x = MNI_tot, y = reorder(common_name, MNI_tot))) +
+  geom_bar(stat = "identity", fill = "#87f7cbff", color = "#003660ff") + 
+  theme_bw() +
+  labs(x = "Frequency", y = "Prey Taxa") +
+  theme(axis.title = element_text(face = "bold", size = 12))
+
+# View the figure
+fig_prey_taxa
+
+# Save to a file
+ggsave(filename = "figures/fig_prey_taxa.pdf",
+       width = 8,
+       height = 8)
+
+## Univariate Dangermond Insects Props Figure ----
+## Stacked bar chart for vert contents only ----
 fig_vert_stacked <- ggplot(data = pellet_contents_vert, aes(x = catalog_number, y = MNI, fill = prey_taxon)) +
   geom_col() + 
   ylab("Minimum number of individuals") +
