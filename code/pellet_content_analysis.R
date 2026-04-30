@@ -68,17 +68,62 @@ fig_prey_taxa <- ggplot(prey_taxa_lumped, aes(x = MNI_tot, y = reorder(common_na
   geom_bar(stat = "identity", fill = "#87f7cbff", color = "#003660ff") + 
   theme_bw() +
   labs(x = "Frequency", y = "Prey Taxa") +
-  theme(axis.title = element_text(face = "bold", size = 12))
+  theme(axis.title = element_text(face = "bold", size = 18),
+        axis.text = element_text(size = 15))
 
 # View the figure
 fig_prey_taxa
 
-# Save to a file
+# Save to a file as PDF
 ggsave(filename = "figures/fig_prey_taxa.pdf",
        width = 8,
        height = 8)
 
-## Univariate Dangermond Insects Props Figure ----
+# Save to a file as PNG
+ggsave(filename = "figures/fig_prey_taxa.png",
+       width = 8,
+       height = 8)
+
+## Univariate Dangermond Invertebrate Props Scatter ----
+fig_scatter_inv_prop <-ggplot(proportions, aes(x = Site, y = invert_proportion)) +
+  geom_point(aes(color = Site), size = 4, pch = 21, fill = "#87f7cbff") + 
+  geom_hline(yintercept = mean(proportions$invert_proportion), 
+             linetype = "dashed", 
+             color = "red3",
+             linewidth = 1) +
+  scale_color_manual(values = "#003660ff") +
+  theme_bw() +
+  labs(x = "Study Site", y = "Invertebrate Prey Proportion", color = "Site") +
+  theme(axis.title = element_text(size = 18, face = "bold"),
+        axis.text = element_text(size = 15),
+        legend.title = element_text(face = "bold"),
+        legend.position = "none")
+
+# View the figure
+fig_scatter_inv_prop
+
+# Save to a file as PDF
+ggsave(filename = "figures/fig_scatter_inv_prop.pdf",
+       width = 5,
+       height = 8)
+
+# Save to a file as PNG
+ggsave(filename = "figures/fig_scatter_inv_prop.png",
+       width = 5,
+       height = 8)
+
+## Dangermond Invertebrate Box + Scatter Fig ----
+fig_box_inv_prop <- ggplot(proportions, aes(x = Site, y = invert_proportion)) + 
+  geom_jitter(fill = "black") +
+  geom_boxplot(alpha = 0.2, fill = "transparent") +
+  theme_bw() +
+  labs(x = "Study Site", y = "Invertebrate Prey Proportion") + 
+  theme(axis.title = element_text(size = 15, face = "bold"),
+        axis.text = element_text(size = 12))
+
+# View the figure
+fig_box_inv_prop
+
 ## Stacked bar chart for vert contents only ----
 fig_vert_stacked <- ggplot(data = pellet_contents_vert, aes(x = catalog_number, y = MNI, fill = prey_taxon)) +
   geom_col() + 
@@ -86,7 +131,7 @@ fig_vert_stacked <- ggplot(data = pellet_contents_vert, aes(x = catalog_number, 
   xlab("Catalog number") +
   guides(fill = guide_legend(title = "Prey taxon")) +
   theme_cowplot() +
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuouse(expand = c(0,0))
 
 # view figure
 fig_vert_stacked
