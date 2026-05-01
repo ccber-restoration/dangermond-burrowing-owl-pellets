@@ -4,6 +4,7 @@
 library(tidyverse)
 library(readxl)
 library(cowplot)
+library(rphylopic)
 
 # Read in data ----
 # read in ID_Counting sheet from Excel and assign to variable & exclude NCOS pellet data.
@@ -42,8 +43,13 @@ proportions <- count_sums %>%
   mutate(invert_proportion = Invertebrate/total_prey) %>%
   mutate(Site = "Dangermond")
 
-# Subset data ----
-## create vertebrate & invert subsets ----
+# Calculate total proportion of invertebrate prey across all pellets
+tot_invert_prop <- sum(proportions$Invertebrate/sum(proportions$Invertebrate,proportions$Vertebrate))
+
+# Calculate total proportion of vertebrate prey across all pellets
+tot_vert_prop <- sum(proportions$Vertebrate/sum(proportions$Invertebrate,proportions$Vertebrate))
+
+## Create vertebrate & invert subsets ----
 pellet_contents_vert <- pellet_contents %>% 
   filter(`vert-invert` == "Vertebrate")
 
@@ -53,44 +59,266 @@ pellet_contents_invert <- pellet_contents %>%
 
 view(prey_taxa)
 
-## Create taxon-based dataframe for count of individuals ----
+## Create taxon-based data frame for count of individuals ----
 prey_taxa_lumped <- pellet_contents %>%
-  select(prey_taxon, common_name, MNI) %>%
-  group_by(common_name) %>%
+  select(prey_taxon, common_name, `vert-invert`, MNI) %>%
+  group_by(common_name, `vert-invert`) %>%
   summarise(MNI_tot = sum(MNI)) %>%
   arrange(desc(MNI_tot)) %>%
-  filter(MNI_tot != 0)
+  filter(MNI_tot != 0) %>%
+# Group together/collapse repetitive/higher resolution taxa categories
+  mutate(common_name = case_when(common_name %in% c("Rodent") ~ "Unidentified Rodent", TRUE ~ common_name), 
+         common_name = case_when(common_name %in% c("Beetles") ~ "Unidentified Beetles",TRUE ~ common_name),
+         common_name = case_when(common_name %in% c("Earwigs", "European earwig") ~ "Earwigs",TRUE ~ common_name),
+         common_name = case_when(common_name %in% c("Grasshoppers, locusts, crickets", "Jerusalem crickets") ~ "Grasshoppers, locusts, crickets",TRUE ~ common_name)) %>%
+  group_by(common_name, `vert-invert`) %>%
+  summarise(across(where(is.numeric), sum))
+
+## Create taxon-based data frame for occurrence frequency in pellets ----
+# Lump together instances of taxa by how many times they appear in pellets
+prey_occ <- pellet_contents %>% 
+  select(catalog_number, prey_taxon, common_name, `vert-invert`) %>%
+  group_by(common_name, `vert-invert`) %>%
+  count(common_name) %>%
+  mutate(freq_occ = (n / 25)*100) %>%
+  filter(common_name != "Insects") %>%
+# Group together/collapse repetitive/higher resolution taxa categories
+  mutate(common_name = case_when(common_name %in% c("Rodent") ~ "Unidentified Rodent", TRUE ~ common_name), 
+         common_name = case_when(common_name %in% c("Beetles") ~ "Unidentified Beetles",TRUE ~ common_name),
+         common_name = case_when(common_name %in% c("Earwigs", "European earwig") ~ "Earwigs",TRUE ~ common_name),
+         common_name = case_when(common_name %in% c("Grasshoppers, locusts, crickets", "Jerusalem crickets") ~ "Grasshoppers, locusts, crickets",TRUE ~ common_name)) %>%
+  group_by(common_name, `vert-invert`) %>%
+  summarise(across(where(is.numeric), sum))
+  
+view(prey_occ)
 
 # Figures ----
-## Taxa Individuals Chart ----
-# Create horizontally-aligned bar chart for the total count of individuals across taxa as referred to by their common names.
-fig_prey_taxa <- ggplot(prey_taxa_lumped, aes(x = MNI_tot, y = reorder(common_name, MNI_tot))) +
-  geom_bar(stat = "identity", fill = "#87f7cbff", color = "#003660ff") + 
-  theme_bw() +
-  labs(x = "Frequency", y = "Prey Taxa") +
-  theme(axis.title = element_text(face = "bold", size = 18),
-        axis.text = element_text(size = 15))
+## Taxa Chart ----
+### Add images from phylopic ----
+## Pick out the appropriate images
+img_dermaptera <- pick_phylopic(name = "Dermaptera", n = 4, view = 4) # Select image 4
+img_carabidae <- pick_phylopic(name = "Carabidae", n = 4, view = 4) # Select image 1
+img_microtus <- pick_phylopic(name = "Microtus", n = 4, view = 4) # Select image 2
+img_orthoptera <- pick_phylopic(name = "Orthoptera", n = 4, view = 4) # Select image 3
+img_reithrodontomys <- pick_phylopic(name = "Neotominae", n = 4, view = 4) # Select image 2
+img_rodentia <- pick_phylopic(name = "Rodentia", n = 4, view = 4) # Select image 3
+img_coleoptera <- pick_phylopic(name = "Coleoptera", n = 4, view = 4) # Select image 2
+img_scarabaeidae <- pick_phylopic(name = "Scarabaeidae", n = 4, view = 4) # Select image 4
+img_tenebrionidae <- pick_phylopic(name = "Tenebrionidae", n = 4, view = 4) # Select image 1
+img_staphylinidae <- pick_phylopic(name = "Staphylinidae", n = 4, view = 4) # Select image 3
+img_sciuridae <- pick_phylopic(name = "Sciuridae", n = 7, view = 7) # Select image 6
+img_pentatomidae <- pick_phylopic(name = "Pentatomidae", n = 4, view = 4) # Select image 4
+img_buprestidae <- pick_phylopic(name = "Buprestidae", n = 4, view = 4) # Select image 2
+img_peromyscus <- pick_phylopic(name = "Peromyscus", n = 4, view = 4) # Select image 2
+img_curculionidae <- pick_phylopic(name = "Curculionidae", n = 4, view = 4) # Select image 2
 
+### Total # individuals bar chart ----
+fig_prey_taxa <- ggplot(prey_taxa_lumped, 
+                        aes(x = MNI_tot, 
+                            y = reorder(common_name, MNI_tot), 
+                                        fill = `vert-invert`)) +
+  geom_bar(stat = "identity", color = "#003660ff") + 
+  scale_fill_manual(values = c("#003660ff", "#87f7cbff")) +
+  theme_bw() +
+  labs(x = "Total Number of Individuals", y = "Prey Taxa", fill = "Classification") +
+  theme(axis.title = element_text(face = "bold", size = 18),
+        axis.text = element_text(size = 15),
+        legend.position = "inside",
+        legend.position.inside = c(0.75,0.75),
+        legend.title = element_text(size = 15, face = "bold"),
+        legend.text = element_text(size = 12),
+        legend.box.background = element_rect(size = 2, color = "#003660ff")) +
+  # Add phylopic icons to the figure
+  ## Dermaptera
+  add_phylopic(img_dermaptera, x = 67, y = 15, 
+               height = 0.70, fill = "white") +
+  ## Carabidae
+  add_phylopic(img_carabidae, x = 30, y = 14, 
+               height = 0.75, fill = "white") +
+  ## Orthoptera
+  add_phylopic(img_orthoptera, x = 29, y = 13, 
+               height = 0.7, fill = "white") +
+  ## Curculionidae
+  add_phylopic(rotate_phylopic(img_curculionidae, angle = 90), 
+               x = 30, y = 12, 
+               height = 0.80, fill = "#003660ff") +
+  ## Microtus
+  add_phylopic(img_microtus, x = 28, y = 11, 
+               height = 0.60, fill = "#87f7cbff", color = "#003660ff") +
+  ## Rodentia
+  add_phylopic(flip_phylopic(img_rodentia, 
+                             horizontal = TRUE, 
+                             vertical = FALSE), 
+               x = 12, y = 10, 
+               height = 0.70, fill = "#87f7cbff", color = "#003660ff") +
+  ## Reithrodontomys
+  add_phylopic(img_reithrodontomys, 
+               x = 11, y = 9, 
+               height = 0.8, fill = "#87f7cbff", color = "#003660ff") +
+  ## Scarabaeidae
+  add_phylopic(rotate_phylopic(img_scarabaeidae, angle = 90), 
+               x = 9, y = 8, 
+               height = 0.70, fill = "#003660ff") +
+  ## Coleoptera
+  add_phylopic(img = rotate_phylopic(img_coleoptera, angle = 90), 
+               x = 8, y = 7, 
+               height = 0.70, fill = "#003660ff") +
+  ## Tenebrionidae
+  add_phylopic(flip_phylopic(img_tenebrionidae,
+                             horizontal = TRUE,
+                             vertical = FALSE), 
+               x = 7, y = 6, 
+               height = 1, fill = "#003660ff") +
+  ## Staphylinidae
+  add_phylopic(flip_phylopic(img_staphylinidae,
+                             horizontal = TRUE,
+                             vertical = FALSE), 
+               x = 7, y = 5, 
+               height = 0.40, fill = "#003660ff") +
+  ## Sciuridae
+  add_phylopic(flip_phylopic(img_sciuridae,
+                             horizontal = TRUE,
+                             vertical = FALSE), 
+               x = 6, y = 4, 
+               height = 0.80, fill = "#87f7cbff", color = "#003660ff") +
+  ## Pentatomidae
+  add_phylopic(flip_phylopic(img_pentatomidae,
+                             horizontal = TRUE,
+                             vertical = FALSE), 
+               x = 7, y = 3, 
+               height = 0.90, fill = "#003660ff") +
+  ## Buprestidae
+  add_phylopic(rotate_phylopic(img_buprestidae, angle = 90), 
+               x = 6, y = 2, 
+               height = 0.55, fill = "#003660ff") + 
+  ## Peromyscus
+  add_phylopic(img_peromyscus, 
+               x = 6, y = 1, 
+               height = 0.80, fill = "#87f7cbff", color = "#003660ff")
+
+### Figure Data & Saving
 # View the figure
 fig_prey_taxa
 
 # Save to a file as PDF
 ggsave(filename = "figures/fig_prey_taxa.pdf",
        width = 8,
-       height = 8)
+       height = 7)
 
 # Save to a file as PNG
 ggsave(filename = "figures/fig_prey_taxa.png",
        width = 8,
-       height = 8)
+       height = 7)
+
+### Prey occurrence in pellets bar chart ---- 
+fig_prey_occ <- ggplot(prey_occ, 
+                       aes(x = freq_occ, 
+                           y = reorder(common_name, freq_occ), 
+                           fill = `vert-invert`)) +
+  geom_bar(stat = "identity", color = "#003660ff") + 
+  scale_fill_manual(values = c("#003660ff", "#87f7cbff")) +
+  theme_bw() +
+  labs(x = "% Occurrence in Pellets", y = "Prey Taxa", fill = "Classification") +
+  theme(axis.title = element_text(face = "bold", size = 18),
+        axis.text = element_text(size = 15),
+        legend.position = "inside",
+        legend.position.inside = c(0.75,0.60),
+        legend.title = element_text(size = 15, face = "bold"),
+        legend.text = element_text(size = 12),
+        legend.box.background = element_rect(size = 2, color = "#003660ff")) +
+  # Add phylopic icons to the figure
+  ## Dermaptera
+  add_phylopic(img_dermaptera, x = 84, y = 15, 
+               height = 0.70, fill = "white") +
+  ## Carabidae
+  add_phylopic(img_carabidae, x = 80, y = 14, 
+               height = 0.75, fill = "#003660ff") +
+  ## Microtus
+  add_phylopic(img_microtus, x = 80, y = 13, 
+               height = 0.60, fill = "#87f7cbff", color = "#003660ff") +
+  ## Orthoptera
+  add_phylopic(img_orthoptera, x = 65, y = 12, 
+               height = 0.70, fill = "#003660ff") +
+  ## Rodentia
+  add_phylopic(flip_phylopic(img_rodentia,
+                             horizontal = TRUE, 
+                             vertical = FALSE), 
+               x = 32, y = 11, 
+               height = 0.70, fill = "#87f7cbff", color = "#003660ff") +
+  ## Curculionidae
+  add_phylopic(rotate_phylopic(img_curculionidae, angle = 90), 
+               x = 27, y = 10, 
+               height = 0.80, fill = "#003660ff") +
+  ## Reithrodontomys
+  add_phylopic(img_reithrodontomys, 
+               x = 22, y = 9, 
+               height = 0.8, fill = "#87f7cbff", color = "#003660ff") +
+  ## Coleoptera
+  add_phylopic(img = rotate_phylopic(img_coleoptera, angle = 90), 
+               x = 15, y = 8, 
+               height = 0.70, fill = "#003660ff") +
+  ## Scarabaeidae
+  add_phylopic(rotate_phylopic(img_scarabaeidae, angle = 90), 
+               x = 15, y = 7, 
+               height = 0.70, fill = "#003660ff") +
+  ## Tenebrionidae
+  add_phylopic(flip_phylopic(img_tenebrionidae,
+                             horizontal = TRUE,
+                             vertical = FALSE), 
+               x = 15, y = 6, 
+               height = 1, fill = "#003660ff") +
+  ## Staphylinidae
+  add_phylopic(flip_phylopic(img_staphylinidae,
+                             horizontal = TRUE,
+                             vertical = FALSE), 
+               x = 15, y = 5, 
+               height = 0.40, fill = "#003660ff") +
+  ## Sciuridae
+  add_phylopic(flip_phylopic(img_sciuridae,
+                             horizontal = TRUE,
+                             vertical = FALSE), 
+               x = 10, y = 4, 
+               height = 0.80, fill = "#87f7cbff", color = "#003660ff") +
+  ## Pentatomidae
+  add_phylopic(flip_phylopic(img_pentatomidae,
+                             horizontal = TRUE,
+                             vertical = FALSE), 
+               x = 12, y = 3, 
+               height = 0.90, fill = "#003660ff") +
+  ## Buprestidae
+  add_phylopic(rotate_phylopic(img_buprestidae, angle = 90), 
+               x = 10, y = 2, 
+               height = 0.55, fill = "#003660ff") + 
+  ## Peromyscus
+  add_phylopic(img_peromyscus, 
+               x = 10, y = 1, 
+               height = 0.80, fill = "#87f7cbff", color = "#003660ff")
+
+### Figure Data & Saving
+# View the figure
+fig_prey_occ
+
+# Save to a file as PDF
+ggsave(filename = "figures/fig_prey_occ.pdf",
+       width = 8,
+       height = 7)
+
+# Save to a file as PNG
+ggsave(filename = "figures/fig_prey_occ.png",
+       width = 8,
+       height = 7)
 
 ## Univariate Dangermond Invertebrate Props Scatter ----
 fig_scatter_inv_prop <-ggplot(proportions, aes(x = Site, y = invert_proportion)) +
   geom_point(aes(color = Site), size = 4, pch = 21, fill = "#87f7cbff") + 
-  geom_hline(yintercept = mean(proportions$invert_proportion), 
-             linetype = "dashed", 
-             color = "red3",
-             linewidth = 1) +
+  # Add the overall proportion of invertebrate prey for Dangermond
+  geom_hline(yintercept = tot_invert_prop, linetype = "dashed", color = "red3",linewidth = 1) +
+  geom_text(aes(0, tot_invert_prop, label = round(tot_invert_prop, 2), 
+                vjust = -1, hjust = -0.2), color = "red3") +
+  # Add the overall proportion of invertebrate prey for NCOS
+  geom_hline(yintercept = 0.974, linetype = "dashed", color = "#febc11", linewidth = 1) +
+  geom_text(aes(0, 0.974, label = "0.974 – UCSB NCOS", 
+                vjust = -1, hjust = -0.05), color = "#febc11") +
   scale_color_manual(values = "#003660ff") +
   theme_bw() +
   labs(x = "Study Site", y = "Invertebrate Prey Proportion", color = "Site") +
@@ -104,13 +332,13 @@ fig_scatter_inv_prop
 
 # Save to a file as PDF
 ggsave(filename = "figures/fig_scatter_inv_prop.pdf",
-       width = 5,
-       height = 8)
+       width = 4,
+       height = 7)
 
 # Save to a file as PNG
 ggsave(filename = "figures/fig_scatter_inv_prop.png",
-       width = 5,
-       height = 8)
+       width = 4,
+       height = 7)
 
 ## Dangermond Invertebrate Box + Scatter Fig ----
 fig_box_inv_prop <- ggplot(proportions, aes(x = Site, y = invert_proportion)) + 
@@ -131,7 +359,7 @@ fig_vert_stacked <- ggplot(data = pellet_contents_vert, aes(x = catalog_number, 
   xlab("Catalog number") +
   guides(fill = guide_legend(title = "Prey taxon")) +
   theme_cowplot() +
-  scale_y_continuouse(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0))
 
 # view figure
 fig_vert_stacked
