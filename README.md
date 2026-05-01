@@ -8,7 +8,7 @@ Study examining contents of Burrowing Owl pellets collected by Wayne Chapman in 
 
 -  Files from the previous BUOW diet study at NCOS (Ostwald et al. 2024) are in Box>CCBER_Projects>Burrowing_Owl_Diet
 
-## 2025 Pellet data
+## 2025 Dangermond pellet data
 
 - Primary project folder on Google Drive is "Dangermond Burrowing Owl pellets" (https://drive.google.com/drive/folders/1oJSs6QwkB_rXeIKF1hzoZXjtTTJex-vW)
 - Primary Google Sheet is "Owl pellet data", with the following sheets:
@@ -18,11 +18,16 @@ Study examining contents of Burrowing Owl pellets collected by Wayne Chapman in 
   -  Invert_counting- contains the invertebrate identifications and counts
   -  Scratchwork contains lists of values for use in data validation rules     
 
-## Prey biomass
+## 2020-2021 NCOS pellet data
 
+- nature_conservation_-056-151-s001.csv is the supplementary materials (Pellet contents raw data) from Ostwald et al. 2024 study: https://natureconservation.pensoft.net/article/127231/element/5/31/
+
+## Prey biomass
+[TO COMPLETE]
 
 
 # Code
+-  pellet_content_analysis.R reads in pellent contents data, wrangles, and produces figures
 -  surveygrid.R reads in the survey grid layer (geopackage) 
   
 ## References
