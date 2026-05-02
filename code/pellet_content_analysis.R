@@ -12,9 +12,14 @@ pellet_contents <- read_xlsx(path = "data/owl_pellet_data_downloaded_2026-04-21.
   drop_na(catalog_number) %>% 
   filter(catalog_number != "UCSB-IZC00077015")
 
-# Data exploration/checking ----
-# check catalog numbers
+# Read in NCOS pellet data
+NCOS_contents <- read.csv("data/nature_conservation_-056-151-s001.csv") %>%
+  drop_na(Pellet.ID) %>%
+  mutate(across(everything(), ~replace_na(.x, 0))) 
 
+# Data exploration/checking ----
+## Dangermond Data ----
+# check catalog numbers
 # how many unique catalog numbers
 n_distinct(pellet_contents$catalog_number)
 
@@ -44,10 +49,32 @@ proportions <- count_sums %>%
   mutate(Site = "Dangermond")
 
 # Calculate total proportion of invertebrate prey across all pellets
-tot_invert_prop <- sum(proportions$Invertebrate/sum(proportions$Invertebrate,proportions$Vertebrate))
+mean_invert_prop <- mean(proportions$invert_proportion)
 
-# Calculate total proportion of vertebrate prey across all pellets
-tot_vert_prop <- sum(proportions$Vertebrate/sum(proportions$Invertebrate,proportions$Vertebrate))
+## NCOS Data ----
+# check catalog numbers
+# how many unique catalog numbers
+n_distinct(NCOS_contents$Pellet.ID) # There are 33 unique pellet IDs/catalogue #s
+
+unique(NCOS_contents$Pellet.ID)
+
+NCOS_count_sums <- NCOS_contents %>% 
+  group_by(Pellet.ID, Vert.or.Invert) %>% 
+  summarize(count_sum = sum(Number.of.Individuals),
+            n_records = n())
+
+NCOS_proportions <- NCOS_count_sums %>%
+  mutate(across(everything(), ~replace_na(.x, 0))) %>%
+  pivot_wider(id_cols = Pellet.ID, names_from = Vert.or.Invert, 
+              values_from = count_sum) %>%
+  mutate(total_prey = Vertebrate + Invertebrate) %>% 
+  mutate(vert_proportion = Vertebrate/total_prey) %>% 
+  mutate(invert_proportion = Invertebrate/total_prey) %>%
+  mutate(Site = "NCOS") %>%
+  rename(catalog_number = Pellet.ID)
+
+# Calculate total proportion of invertebrate prey across all pellets
+NCOS_mean_invert_prop <- mean(NCOS_proportions$invert_proportion)
 
 ## Create vertebrate & invert subsets ----
 pellet_contents_vert <- pellet_contents %>% 
@@ -216,6 +243,7 @@ fig_prey_occ <- ggplot(prey_occ,
                            y = reorder(common_name, freq_occ), 
                            fill = `vert-invert`)) +
   geom_bar(stat = "identity", color = "#003660ff") + 
+  xlim(0, 100) +
   scale_fill_manual(values = c("#003660ff", "#87f7cbff")) +
   theme_bw() +
   labs(x = "% Occurrence in Pellets", y = "Prey Taxa", fill = "Classification") +
@@ -231,7 +259,7 @@ fig_prey_occ <- ggplot(prey_occ,
   add_phylopic(img_dermaptera, x = 84, y = 15, 
                height = 0.70, fill = "white") +
   ## Carabidae
-  add_phylopic(img_carabidae, x = 80, y = 14, 
+  add_phylopic(img_carabidae, x = 82, y = 14, 
                height = 0.75, fill = "#003660ff") +
   ## Microtus
   add_phylopic(img_microtus, x = 80, y = 13, 
@@ -287,11 +315,11 @@ fig_prey_occ <- ggplot(prey_occ,
                height = 0.90, fill = "#003660ff") +
   ## Buprestidae
   add_phylopic(rotate_phylopic(img_buprestidae, angle = 90), 
-               x = 10, y = 2, 
+               x = 11, y = 2, 
                height = 0.55, fill = "#003660ff") + 
   ## Peromyscus
   add_phylopic(img_peromyscus, 
-               x = 10, y = 1, 
+               x = 11, y = 1, 
                height = 0.80, fill = "#87f7cbff", color = "#003660ff")
 
 ### Figure Data & Saving
@@ -308,18 +336,24 @@ ggsave(filename = "figures/fig_prey_occ.png",
        width = 8,
        height = 7)
 
-## Univariate Dangermond Invertebrate Props Scatter ----
-fig_scatter_inv_prop <-ggplot(proportions, aes(x = Site, y = invert_proportion)) +
-  geom_point(aes(color = Site), size = 4, pch = 21, fill = "#87f7cbff") + 
+## Invertebrate Props Scatter ----
+sites_inv_prop <- rbind(proportions, NCOS_proportions) # Combine the proportions for both Dangermond and NCOS
+
+fig_scatter_inv_prop <- ggplot(sites_inv_prop, aes(x = Site, y = invert_proportion)) +
+  geom_point(aes(color = Site, fill = Site), size = 4, pch = 21) + 
+  
   # Add the overall proportion of invertebrate prey for Dangermond
-  geom_hline(yintercept = tot_invert_prop, linetype = "dashed", color = "red3",linewidth = 1) +
-  geom_text(aes(0, tot_invert_prop, label = round(tot_invert_prop, 2), 
-                vjust = -1, hjust = -0.2), color = "red3") +
+  geom_hline(yintercept = mean_invert_prop, linetype = "dashed", color = "darkolivegreen4",linewidth = 1) +
+  geom_text(aes(0, mean_invert_prop, label = round(mean_invert_prop,2), 
+                vjust = -1, hjust = -0.2), color = "darkolivegreen4") +
+  
   # Add the overall proportion of invertebrate prey for NCOS
-  geom_hline(yintercept = 0.974, linetype = "dashed", color = "#febc11", linewidth = 1) +
-  geom_text(aes(0, 0.974, label = "0.974 – UCSB NCOS", 
-                vjust = -1, hjust = -0.05), color = "#febc11") +
-  scale_color_manual(values = "#003660ff") +
+  geom_hline(yintercept = NCOS_mean_invert_prop, linetype = "dashed", color = "#fe7c11", linewidth = 1) +
+  geom_text(aes(0, NCOS_mean_invert_prop, label = round(NCOS_mean_invert_prop,2), 
+                vjust = -1, hjust = -0.2), color = "#fe7c11") +
+  
+  scale_fill_manual(values = c("darkolivegreen3", "#feac11")) +
+  scale_color_manual(values = c("darkolivegreen", "#fe6c11")) +
   theme_bw() +
   labs(x = "Study Site", y = "Invertebrate Prey Proportion", color = "Site") +
   theme(axis.title = element_text(size = 18, face = "bold"),
@@ -332,13 +366,13 @@ fig_scatter_inv_prop
 
 # Save to a file as PDF
 ggsave(filename = "figures/fig_scatter_inv_prop.pdf",
-       width = 4,
-       height = 7)
+       width = 5,
+       height = 6)
 
 # Save to a file as PNG
 ggsave(filename = "figures/fig_scatter_inv_prop.png",
-       width = 4,
-       height = 7)
+       width = 5,
+       height = 6)
 
 ## Dangermond Invertebrate Box + Scatter Fig ----
 fig_box_inv_prop <- ggplot(proportions, aes(x = Site, y = invert_proportion)) + 
