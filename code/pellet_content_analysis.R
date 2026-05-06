@@ -17,8 +17,7 @@ NCOS_contents <- read.csv("data/nature_conservation_-056-151-s001.csv") %>%
   drop_na(Pellet.ID) %>%
   mutate(across(everything(), ~replace_na(.x, 0))) 
 
-# Data exploration/checking ----
-## Dangermond Data ----
+# Dangermond Data Exploration ----
 # check catalog numbers
 # how many unique catalog numbers
 n_distinct(pellet_contents$catalog_number)
@@ -51,7 +50,7 @@ proportions <- count_sums %>%
 # Calculate total proportion of invertebrate prey across all pellets
 mean_invert_prop <- mean(proportions$invert_proportion)
 
-## NCOS Data ----
+# NCOS Data Exploration ----
 # check catalog numbers
 # how many unique catalog numbers
 n_distinct(NCOS_contents$Pellet.ID) # There are 33 unique pellet IDs/catalogue #s
@@ -75,16 +74,6 @@ NCOS_proportions <- NCOS_count_sums %>%
 
 # Calculate total proportion of invertebrate prey across all pellets
 NCOS_mean_invert_prop <- mean(NCOS_proportions$invert_proportion)
-
-## Create vertebrate & invert subsets ----
-pellet_contents_vert <- pellet_contents %>% 
-  filter(`vert-invert` == "Vertebrate")
-
-pellet_contents_invert <- pellet_contents %>% 
-  filter(`vert-invert` == "Invertebrate")
-
-
-view(prey_taxa)
 
 ## Create taxon-based data frame for count of individuals ----
 prey_taxa_lumped <- pellet_contents %>%
@@ -120,8 +109,7 @@ prey_occ <- pellet_contents %>%
 view(prey_occ)
 
 # Figures ----
-## Taxa Chart ----
-### Add images from phylopic ----
+## Add images from phylopic ----
 ## Pick out the appropriate images
 img_dermaptera <- pick_phylopic(name = "Dermaptera", n = 4, view = 4) # Select image 4
 img_carabidae <- pick_phylopic(name = "Carabidae", n = 4, view = 4) # Select image 1
@@ -139,7 +127,7 @@ img_buprestidae <- pick_phylopic(name = "Buprestidae", n = 4, view = 4) # Select
 img_peromyscus <- pick_phylopic(name = "Peromyscus", n = 4, view = 4) # Select image 2
 img_curculionidae <- pick_phylopic(name = "Curculionidae", n = 4, view = 4) # Select image 2
 
-### Total # individuals bar chart ----
+## Total # individuals bar chart ----
 fig_prey_taxa <- ggplot(prey_taxa_lumped, 
                         aes(x = MNI_tot, 
                             y = reorder(common_name, MNI_tot), 
@@ -237,7 +225,7 @@ ggsave(filename = "figures/fig_prey_taxa.png",
        width = 8,
        height = 7)
 
-### Prey occurrence in pellets bar chart ---- 
+## Prey occurrence in pellets bar chart ---- 
 fig_prey_occ <- ggplot(prey_occ, 
                        aes(x = freq_occ, 
                            y = reorder(common_name, freq_occ), 
@@ -247,13 +235,16 @@ fig_prey_occ <- ggplot(prey_occ,
   scale_fill_manual(values = c("#003660ff", "#87f7cbff")) +
   theme_bw() +
   labs(x = "% Occurrence in Pellets", y = "Prey Taxa", fill = "Classification") +
-  theme(axis.title = element_text(face = "bold", size = 18),
+  theme(axis.title = element_text(face = "bold", size = 18, 
+                                  family = "serif", color = "#003660ff"),
         axis.text = element_text(size = 15),
         legend.position = "inside",
         legend.position.inside = c(0.75,0.60),
-        legend.title = element_text(size = 15, face = "bold"),
+        legend.title = element_text(size = 15, face = "bold",
+                                    family = "serif", color = "#003660ff"),
         legend.text = element_text(size = 12),
         legend.box.background = element_rect(size = 2, color = "#003660ff")) +
+  
   # Add phylopic icons to the figure
   ## Dermaptera
   add_phylopic(img_dermaptera, x = 84, y = 15, 
@@ -340,8 +331,10 @@ ggsave(filename = "figures/fig_prey_occ.png",
 sites_inv_prop <- rbind(proportions, NCOS_proportions) # Combine the proportions for both Dangermond and NCOS
 
 fig_scatter_inv_prop <- ggplot(sites_inv_prop, aes(x = Site, y = invert_proportion)) +
-  geom_point(aes(color = Site, fill = Site), size = 4, pch = 21) + 
-  
+  geom_point(alpha = 0) + 
+  geom_jitter(aes(color = Site, fill = Site), 
+              width = 0.15, alpha = 0.5, size = 3, pch = 21) +
+
   # Add the overall proportion of invertebrate prey for Dangermond
   geom_hline(yintercept = mean_invert_prop, linetype = "dashed", color = "darkolivegreen4",linewidth = 1) +
   geom_text(aes(0, mean_invert_prop, label = round(mean_invert_prop,2), 
@@ -356,7 +349,8 @@ fig_scatter_inv_prop <- ggplot(sites_inv_prop, aes(x = Site, y = invert_proporti
   scale_color_manual(values = c("darkolivegreen", "#fe6c11")) +
   theme_bw() +
   labs(x = "Study Site", y = "Invertebrate Prey Proportion", color = "Site") +
-  theme(axis.title = element_text(size = 18, face = "bold"),
+  theme(axis.title = element_text(size = 18, face = "bold", 
+                                  family = "serif", color = "#003660ff"),
         axis.text = element_text(size = 15),
         legend.title = element_text(face = "bold"),
         legend.position = "none")
@@ -373,18 +367,6 @@ ggsave(filename = "figures/fig_scatter_inv_prop.pdf",
 ggsave(filename = "figures/fig_scatter_inv_prop.png",
        width = 5,
        height = 6)
-
-## Dangermond Invertebrate Box + Scatter Fig ----
-fig_box_inv_prop <- ggplot(proportions, aes(x = Site, y = invert_proportion)) + 
-  geom_jitter(fill = "black") +
-  geom_boxplot(alpha = 0.2, fill = "transparent") +
-  theme_bw() +
-  labs(x = "Study Site", y = "Invertebrate Prey Proportion") + 
-  theme(axis.title = element_text(size = 15, face = "bold"),
-        axis.text = element_text(size = 12))
-
-# View the figure
-fig_box_inv_prop
 
 ## Stacked bar chart for vert contents only ----
 fig_vert_stacked <- ggplot(data = pellet_contents_vert, aes(x = catalog_number, y = MNI, fill = prey_taxon)) +
@@ -403,5 +385,25 @@ ggsave(filename = "figures/fig_vert_stacked.pdf",
        width = 8,
        height = 6)
 
-# TODO
-# FIXME
+# Statistical Analyses ----
+## Determine Normality
+fig_box_inv_prop <- ggplot(sites_inv_prop, aes(x = Site, y = invert_proportion)) + 
+  geom_jitter(fill = "black") +
+  geom_boxplot(alpha = 0.2, fill = "transparent") +
+  theme_bw() +
+  labs(x = "Study Site", y = "Invertebrate Prey Proportion") + 
+  theme(axis.title = element_text(size = 15, face = "bold"),
+        axis.text = element_text(size = 12))
+
+# View the figure
+fig_box_inv_prop 
+
+# Normality tests
+shapiro.test(proportions$invert_proportion) # for Dangermond; NOT normal
+shapiro.test(NCOS_proportions$invert_proportion) # for NCOS; NOT normal
+
+# Test of statistical difference/significance between the means for both sites
+t.test(NCOS_proportions$invert_proportion, alternative = "greater", 
+       mu = mean(proportions$invert_proportion))
+t.test(proportions$invert_proportion, alternative = "greater", 
+       mu = mean(NCOS_proportions$invert_proportion))
