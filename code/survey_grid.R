@@ -12,20 +12,21 @@ library(janitor)
 
 # 1.  read in pellet data to get list of quadrats with pellets ----
 quadrats <- read_xlsx(path = "data/owl_pellet_data_downloaded_2026-04-21.xlsx", sheet = "Pellets") %>% 
-  clean_names() %>% 
+  clean_names() %>%
   drop_na(pellet_catalog_number_qr_code) %>% 
-  filter(location == "Dangermond Preserve") %>% 
+  filter(location == "Dangermond Preserve" & use_in_study == "Yes") %>% 
   # filter out a non-Dangermond pellet
   filter(pellet_catalog_number_qr_code != "UCSB-IZC00077015") %>% 
   # select just the catalog number column
-  select(quadrat) %>% 
+  select(quadrat) %>%
   # list of unique values
   unique() %>% 
   # use pull to change to vector (in R sense, not GIS-sense)
   pull()
 
-# note that this has 31 values; not all quadrats had *intact* pellets
-# need to decide what to do about "33512/33355". Map both?
+view(quadrats)
+
+# TODO need to decide what to do about "33512/33355". Map both?
 
 # 2. Read in spatial data for survey grid ----
 #view layers 
@@ -63,8 +64,7 @@ grid <- survey_simple %>%
   st_drop_geometry() %>% 
   mutate(high_density = case_when(
     GridID %in% quad_high_density ~ "8 or more pellets",
-    .default = "< 8 pellets"
-  )) 
+    .default = "< 8 pellets")) 
 
 grid_sf <- st_as_sf(x = grid, coords = c("X", "Y"), crs = 4326) 
 
