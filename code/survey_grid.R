@@ -86,6 +86,13 @@ centroids <- st_centroid(quadrats_with_pellets)
 
 mapview(centroids, col.regions = "#87f7cbff", map.types = "Esri.WorldImagery")
 
+centroids %>%
+  mutate(x = st_coordinates(.)[,1],
+         y = st_coordinates(.)[,2]) %>%
+  st_drop_geometry() %>%
+  write_csv("data/pellet_locations_for_URCA_poster_map.csv")
+  
+
 # 4. Map grid cells where >7 pellets were collected ----
 
 # list of quadrats with at least 8 pellets
