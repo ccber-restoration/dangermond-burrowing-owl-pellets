@@ -34,17 +34,24 @@ quadrats
 
 
 # 2. Read in spatial data for survey grid ----
-#view layers 
-st_layers("data/Cojo_Survey_10x10_Grid.gpkg")
+# view layers 
+# st_layers("data/Cojo_Survey_10x10_Grid.gpkg")
 
-#read in geopackage layer
-survey_grid<- st_read("data/Cojo_Survey_10x10_Grid.gpkg", layer = "Survey_10x10_Grid") %>% 
+# read in geopackage layer
+# survey_grid<- st_read("data/Cojo_Survey_10x10_Grid.gpkg", layer = "Survey_10x10_Grid") %>% 
+#   st_transform(crs = 4326) %>% 
+#   st_zm() 
+
+survey_grid_geojson <- st_read("data/Cojo_Survey_10x10_Grid.geojson") %>% 
   st_transform(crs = 4326) %>% 
   st_zm() 
 
-survey_simple <- st_cast(survey_grid, "POLYGON")
+survey_simple <- st_cast(survey_grid_geojson, "POLYGON")
 
-mapview(survey_simple)
+# commenting this out because it's causing R to crash
+# mapview(survey_simple)
+
+rm(survey_grid_geojson)
 
 # show just the boundary of the survey grid
 boundary <- sf_dissolve(survey_simple)
@@ -58,28 +65,27 @@ ambiguous_location <- survey_simple %>%
 
 mapview(ambiguous_location)
 
+remove(ambiguous_location)
 
 # 3. map quadrats with pellets ----
 quadrats_with_pellets <- survey_simple %>% 
-  filter(GridID %in% quadrats)
+  filter(OBJECTID %in% quadrats)
 
 mapview(quadrats_with_pellets, map.types = "Esri.WorldImagery")
 
-# this is only 23 locations (expecting 25)
+# This is 25 pellets (correct) after filtering using OBJECTID instead of GridID
 # impossible to see 10x10 m quadrats when zoomed out to full AOI extent
 
-## Check which two pellets not matching to survey grid ----
+## Check for any pellets (previously 2) not matching to survey grid ----
 
 non_matched_quadrats <- quadrats %>% 
   as.data.frame() %>% 
-  filter(!(. %in% survey_simple$GridID))
+  filter(!(. %in% survey_simple$OBJECTID))
 
-# quadrats 41589 (UCSB-IZC00077047) and 4127 (UCSB-IZC00077066) are not in the survey grid
+# Now 0
+# quadrats 41589 (UCSB-IZC00077047) and 4127 (UCSB-IZC00077066) were not in GridID
 
-# In email from Wayne on 2026-02-20, he clarified that 41589 was from fall 2024, before the survey grid existed
-# " I would guess they were in or about quadrat 41509"
-
-# But 41509 is not in the survey grid data we're using here!
+rm(non_matched_quadrats)
 
 # hard to see, so convert to points
 centroids <- st_centroid(quadrats_with_pellets)
@@ -90,10 +96,12 @@ centroids %>%
   mutate(x = st_coordinates(.)[,1],
          y = st_coordinates(.)[,2]) %>%
   st_drop_geometry() %>%
-  write_csv("data/pellet_locations_for_URCA_poster_map.csv")
+  write_csv("data/pellet_locations_initial_25.csv")
   
 
 # 4. Map grid cells where >7 pellets were collected ----
+
+# FIXME- this section is a WIP
 
 # list of quadrats with at least 8 pellets
 quad_high_density <- c(41509, 1285, 3622, 677)
@@ -101,7 +109,7 @@ quad_high_density <- c(41509, 1285, 3622, 677)
 grid <- survey_simple %>% 
   st_drop_geometry() %>% 
   mutate(high_density = case_when(
-    GridID %in% quad_high_density ~ "8 or more pellets",
+    OBJECTID %in% quad_high_density ~ "8 or more pellets",
     .default = "< 8 pellets")) 
 
 grid_sf <- st_as_sf(x = grid, coords = c("X", "Y"), crs = 4326) 
