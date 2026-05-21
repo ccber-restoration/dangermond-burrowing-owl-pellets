@@ -34,13 +34,6 @@ quadrats
 
 
 # 2. Read in spatial data for survey grid ----
-# view layers 
-# st_layers("data/Cojo_Survey_10x10_Grid.gpkg")
-
-# read in geopackage layer
-# survey_grid<- st_read("data/Cojo_Survey_10x10_Grid.gpkg", layer = "Survey_10x10_Grid") %>% 
-#   st_transform(crs = 4326) %>% 
-#   st_zm() 
 
 survey_grid_geojson <- st_read("data/Cojo_Survey_10x10_Grid.geojson") %>% 
   st_transform(crs = 4326) %>% 
