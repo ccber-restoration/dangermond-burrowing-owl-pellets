@@ -67,6 +67,7 @@ quadrats_with_pellets <- survey_simple %>%
 mapview(quadrats_with_pellets, map.types = "Esri.WorldImagery")
 
 # This is 25 pellets (correct) after filtering using OBJECTID instead of GridID
+# see https://github.com/ccber-restoration/dangermond-burrowing-owl-pellets/issues/3 
 # impossible to see 10x10 m quadrats when zoomed out to full AOI extent
 
 ## Check for any pellets (previously 2) not matching to survey grid ----
