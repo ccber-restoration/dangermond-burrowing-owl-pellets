@@ -93,6 +93,14 @@ centroids %>%
   write_csv("data/pellet_locations_initial_25.csv")
   
 
+# Squirrel locations
+
+possible_squirrel_locations <- centroids %>% 
+  filter(OBJECTID %in% c(677, 3622))
+
+mapview(possible_squirrel_locations, map.types = "Esri.WorldImagery")
+
+
 # 4. Map grid cells where >7 pellets were collected ----
 
 # FIXME- this section is a WIP
